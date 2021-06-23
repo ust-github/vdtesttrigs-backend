@@ -19,7 +19,8 @@ pipeline {
       steps {
         script {
 		docker.withTool('docker'){
-
+			docker.withRegistry('https://artifactory.dagility.com', 'dbe6f213-5d8a-4624-b40a-610d5670d326'){
+				
         
             sh script: '''
 docker build -t artifactory.dagility.com/docker/vdtesttrigs-backend:latest .
@@ -27,7 +28,8 @@ docker build -t artifactory.dagility.com/docker/vdtesttrigs-backend:latest .
             sh script: '''
 docker push artifactory.dagility.com/docker/vdtesttrigs-backend:latest
 ''', label: 'acbdfa'
-        		}
+        			}
+		}
 	}
 script { sh script: 'sleep 0.005', label: 'fmw4o7'}
 
@@ -35,7 +37,7 @@ script { sh script: 'sleep 0.005', label: 'fmw4o7'}
 ln -sf /usr/local/bin/helm3 /usr/local/bin/helm
 ''', label: 'rlklcw'
         sh script: 'helm package chart', label: 'ijhrf0'
-        withCredentials([usernamePassword(credentialsId: '', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+        withCredentials([usernamePassword(credentialsId: 'dbe6f213-5d8a-4624-b40a-610d5670d326', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
 
         script {
             sh script: '''
@@ -44,7 +46,9 @@ curl -u$USER:$PASS -T vdtesttrigs-backend-chart-0.1.0.tgz 'https://artifactory.d
         } // end step group script
 script { sh script: 'sleep 0.005', label: '4j2evm'}
 } // end step group
-        sh script: 'helm repo add vdtesttrigs-backend https://artifactory.dagility.com/artifactory/helm ', label: 'rvsu01'
+        withCredentials([   usernamePassword(credentialsId: 'dbe6f213-5d8a-4624-b40a-610d5670d326', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+   sh script: 'helm repo add vdtesttrigs-backend https://artifactory.dagility.com/artifactory/helm --username $USER --password $PASS ', label: 'rvsu01' 
+}
         sh script: 'helm repo update', label: 'mesfnb'
         sh script: 'helm upgrade vdtesttrigs-backend-deployment vdtesttrigs-backend/vdtesttrigs-backend-chart --install --values chart-values.yaml --namespace default --set ingress.hosts[0].host=vdtesttrigs-backend-default.dagility.com', label: 'ixxrui'
       } //end steps
